@@ -55,7 +55,7 @@ class _BillDetailPageState extends State<BillDetailPage> {
   }
 
   Future<void> _loadMaxIdAndFetchBillDetails(int statusBill) async {
-    var url = Uri.parse('http://192.168.30.244:8000/api/all-momopayment');
+    var url = Uri.parse('http://192.168.1.171:8000/api/all-momopayment');
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -76,7 +76,7 @@ class _BillDetailPageState extends State<BillDetailPage> {
             } else {
               final response = await http.get(
                 Uri.parse(
-                    'http://192.168.30.244:8000/api/bills/$maxIdBillDetailPage'),
+                    'http://192.168.1.171:8000/api/bills/$maxIdBillDetailPage'),
               );
               print('maxIdBillDetailPage ==> $maxIdBillDetailPage');
               print('statusBill ==> $statusBill');

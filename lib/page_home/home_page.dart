@@ -13,7 +13,7 @@ import 'package:tot_nghiep_ban_sach_thu_vien/page_home/ItemsListCDCNPM.dart';
 import 'package:tot_nghiep_ban_sach_thu_vien/page_home/ItemsListCNMMT.dart';
 import 'package:tot_nghiep_ban_sach_thu_vien/page_home/ItemsListNQTM.dart';
 import 'package:tot_nghiep_ban_sach_thu_vien/page_home/ItemsListToan.dart';
-import '../user/user_login_screen.dart';
+import 'package:tot_nghiep_ban_sach_thu_vien/user/user_profile.dart';
 
 import 'package:http/http.dart' as http;
 
@@ -30,6 +30,7 @@ class _HomeScreenState extends State<HomeScreen>
   List<ItemProduct> filteredProducts = [];
   String searchQuery = '';
   bool _productsFetched = false;
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
@@ -38,6 +39,15 @@ class _HomeScreenState extends State<HomeScreen>
     _clearSharedPreferences();
     _tabController = TabController(length: 5, vsync: this);
     _fetchProducts();
+    _checkLoginStatus();
+  }
+
+  void _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    setState(() {
+      _isLoggedIn = token != null;
+    });
   }
 
   void _handleSearchQueryChange(String query) {
@@ -50,14 +60,14 @@ class _HomeScreenState extends State<HomeScreen>
 
     try {
       final response = await http
-          .get(Uri.parse('http://192.168.30.244:8000/api/all-product'));
+          .get(Uri.parse('http://192.168.1.171:8000/api/all-product'));
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> productsData = data['data'];
 
         setState(() {
           products = productsData.map((product) {
-            String baseUrl = 'http://192.168.30.244:8000/api/all-product';
+            String baseUrl = 'http://192.168.1.171:8000/api/all-product';
             String imgProductUrl = product['imgproduct'] != null
                 ? baseUrl + product['imgproduct']
                 : '';
@@ -283,29 +293,68 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             onSelected: (String result) {
               if (result == 'Cài đặt') {
-              } else if (result == 'Đăng xuất') {
-                _logoutAndNavigateToLogin();
+                // Xử lý khi chọn "Cài đặt"
               } else if (result == 'Thông tin tài khoản') {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => UserLoginScreen()),
+                  MaterialPageRoute(builder: (context) => UserProfileScreen()),
                 );
+              } else if (result == 'Đăng xuất') {
+                _logoutAndNavigateToLogin();
+              } else if (result == 'Đăng nhập') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+              } else if (result == 'Ngôn ngữ') {
+                // Mở trang chọn ngôn ngữ
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //       builder: (context) => LanguageSettingsScreen()),
+                // );
               }
             },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'Cài đặt',
-                child: Text('Cài đặt'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'Thông tin tài khoản',
-                child: Text('Thông tin tài khoản'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'Đăng xuất',
-                child: Text('Đăng xuất'),
-              ),
-            ],
+            itemBuilder: (BuildContext context) {
+              List<PopupMenuEntry<String>> menuItems = [
+                const PopupMenuItem<String>(
+                  value: 'Cài đặt',
+                  child: Text('Cài đặt'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Thông tin tài khoản',
+                  child: Text('Thông tin tài khoản'),
+                ),
+              ];
+
+              // Kiểm tra trạng thái đăng nhập
+              if (_isLoggedIn) {
+                menuItems.add(
+                  const PopupMenuItem<String>(
+                    value: 'Đăng xuất',
+                    child: Text('Đăng xuất'),
+                  ),
+                );
+              } else {
+                menuItems.add(
+                  const PopupMenuItem<String>(
+                    value: 'Đăng nhập',
+                    child: Text('Đăng nhập'),
+                  ),
+                );
+              }
+
+              // Thêm một dòng phân cách và mục ngôn ngữ
+              // menuItems.add(const PopupMenuDivider());
+              menuItems.add(
+                const PopupMenuItem<String>(
+                  value: 'Ngôn ngữ',
+                  child: Text('Ngôn ngữ'),
+                ),
+              );
+
+              return menuItems;
+            },
           )
         ],
       ),
@@ -367,30 +416,30 @@ class _HomeScreenState extends State<HomeScreen>
                         style: TextStyle(fontFamily: "Varela", fontSize: 17),
                       ),
                     ),
-                    Tab(
-                      child: Text(
-                        "CĐ Ô tô",
-                        style: TextStyle(fontFamily: "Varela", fontSize: 17),
-                      ),
-                    ),
-                    Tab(
-                      child: Text(
-                        "CĐN QTM",
-                        style: TextStyle(fontFamily: "Varela", fontSize: 17),
-                      ),
-                    ),
-                    Tab(
-                      child: Text(
-                        "CĐ CN CNPM",
-                        style: TextStyle(fontFamily: "Varela", fontSize: 17),
-                      ),
-                    ),
-                    Tab(
-                      child: Text(
-                        "CĐN MMT",
-                        style: TextStyle(fontFamily: "Varela", fontSize: 17),
-                      ),
-                    )
+                    // Tab(
+                    //   child: Text(
+                    //     "CĐ Ô tô",
+                    //     style: TextStyle(fontFamily: "Varela", fontSize: 17),
+                    //   ),
+                    // ),
+                    // Tab(
+                    //   child: Text(
+                    //     "CĐN QTM",
+                    //     style: TextStyle(fontFamily: "Varela", fontSize: 17),
+                    //   ),
+                    // ),
+                    // Tab(
+                    //   child: Text(
+                    //     "CĐ CN CNPM",
+                    //     style: TextStyle(fontFamily: "Varela", fontSize: 17),
+                    //   ),
+                    // ),
+                    // Tab(
+                    //   child: Text(
+                    //     "CĐN MMT",
+                    //     style: TextStyle(fontFamily: "Varela", fontSize: 17),
+                    //   ),
+                    // )
                   ],
                 ),
               ],
@@ -464,7 +513,7 @@ class _HomeScreenState extends State<HomeScreen>
       bool hasMoreData = true;
 
       while (hasMoreData) {
-        var url = Uri.parse('http://192.168.30.244:8000/api/carts/$id');
+        var url = Uri.parse('http://192.168.1.171:8000/api/carts/$id');
         var response = await http.get(url);
 
         if (response.statusCode == 200) {
@@ -527,8 +576,19 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _logoutAndNavigateToLogin() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
+
+    // Lấy ngôn ngữ hiện tại
+    String languageCode = prefs.getString('languageCode') ?? 'vi';
+    print("Ngôn ngữ đã được lưu: $languageCode");
+
+    // Xóa toàn bộ dữ liệu đăng nhập nhưng giữ lại ngôn ngữ
     await prefs.clear();
+    await prefs.setString('languageCode', languageCode);
+
+    print("Đã đăng xuất. Điều hướng về màn hình đăng nhập...");
+
+    // Điều hướng đến màn hình LoginScreen
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => LoginScreen()),

@@ -31,9 +31,13 @@ class _ItemsListState extends State<ItemsList> {
   @override
   void initState() {
     super.initState();
-    fetchProducts();
-    _loadCredentials();
-    fetchUserAccountStatus();
+    _initializeData();
+    //fetchProducts();
+  }
+
+  Future<void> _initializeData() async {
+    await fetchUserAccountStatus(); // Đảm bảo tất cả print của fetchUserAccountStatus() được in trước
+    fetchProducts(); // Gọi sau khi fetchUserAccountStatus() hoàn thành
   }
 
   Future<void> _loadCredentials() async {
@@ -50,38 +54,52 @@ class _ItemsListState extends State<ItemsList> {
     try {
       await _loadCredentials();
 
+      // Kiểm tra email và password nếu trống thì in thông báo "Đây là tài khoản khách"
       if (email.isEmpty || password.isEmpty) {
-        throw Exception('Email hoặc password không tồn tại');
+        print('Đây là tài khoản khách');
+        return -1; // Trả về giá trị mặc định khi email hoặc password không có
       }
 
       var response = await http.post(
-        Uri.parse('http://192.168.30.244:8000/api/auth/users'),
+        Uri.parse('http://192.168.1.171:8000/api/auth/users'),
         body: {'email': email, 'password': password},
       );
 
       if (response.statusCode == 200) {
         var responseData = jsonDecode(response.body);
         var data = responseData['data'];
-        int status = data['status'] ?? 0;
+        int status = data['role_id'] ??
+            -1; // Sử dụng giá trị mặc định là -1 nếu role_id là null
+
+        // Kiểm tra giá trị role_id và in thông báo
+        if (status == 1) {
+          print('Xin chào admin');
+        } else if (status == 0) {
+          print('Đây là tài khoản thành viên');
+        } else {
+          print(
+              'Đây là tài khoản khách'); // Hiển thị khi status là null (trở thành -1)
+        }
+
         print('Email đăng nhập lấy Status ===> $email');
         print('Password đăng nhập lấy Status ===> $password');
-        print('Status từ API: $status');
+        print('role_id từ API: $status');
 
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setInt('userStatus', status);
 
         return status;
       } else {
-        throw Exception('Failed to load user account');
+        return -1; // Trả về -1 nếu không thể lấy dữ liệu từ API
       }
     } catch (error) {
       print('Error fetching user account: $error');
-      rethrow;
+      return -1; // Trả về -1 nếu có lỗi trong quá trình thực thi
     }
   }
 
   Future<void> fetchProducts() async {
-    const String baseUrl = 'http://192.168.30.244:8000/api/products/';
+    const String baseUrl = 'http://192.168.1.171:8000/api/products/';
     final client = HttpClient();
     client.connectionTimeout = Duration(minutes: 2);
 

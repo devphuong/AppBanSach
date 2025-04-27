@@ -90,7 +90,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.30.244:8000/api/auth/addproduct'),
+        Uri.parse('http://192.168.1.171:8000/api/auth/addproduct'),
       );
 
       request.fields['category'] = category;

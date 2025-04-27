@@ -5,6 +5,8 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tot_nghiep_ban_sach_thu_vien/Language/languageswitchpage.dart';
+
 import 'package:tot_nghiep_ban_sach_thu_vien/common/DialogHelper.dart';
 import 'package:tot_nghiep_ban_sach_thu_vien/common/custom_form_button_login.dart';
 import 'package:tot_nghiep_ban_sach_thu_vien/common/custom_input_field.dart';
@@ -29,22 +31,107 @@ bool _showErrors = true;
 
 class _LoginScreenState extends State<LoginScreen> {
   final _loginFormKey = GlobalKey<FormState>();
+
+  String title = 'Đăng nhập';
+  String emailLabel = 'E-mail';
+  String emailtxt = 'Email của bạn';
+  String passwordLabel = 'Mật khẩu';
+  String passwordtxt = 'Mật khẩu của bạn';
+  String forgetPasswordText = 'Quên mật khẩu?';
+  String signUpText = ' Đăng ký';
+  String dontHaveAccountText = 'Không có tài khoản?';
+  String buttonlogin = 'Đăng nhập';
+
+  Future<void> _loadLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    String currentLanguage = prefs.getString('languageCode') ?? 'vi';
+    print("Ngôn ngữ hiện tại trong trang Đăng Nhập: $currentLanguage");
+    setState(() {
+      if (currentLanguage == 'vi') {
+        title = 'Đăng Nhập';
+        emailLabel = 'Email';
+        emailtxt = 'Nhập email của bạn';
+        passwordLabel = 'Mật khẩu';
+        passwordtxt = 'Nhập mật khẩu của bạn';
+        forgetPasswordText = 'Quên mật khẩu?';
+        signUpText = 'Đăng ký';
+        dontHaveAccountText = 'Chưa có tài khoản?';
+        buttonlogin = 'Đăng nhập';
+      } else {
+        title = 'Log-in';
+        emailLabel = 'Email';
+        emailtxt = 'Your Email';
+        passwordLabel = 'Password';
+        passwordtxt = 'Your Password';
+        forgetPasswordText = 'Forget password?';
+        signUpText = 'Sign-up';
+        dontHaveAccountText = "Don't have an account ?";
+        buttonlogin = 'Login';
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     emailController.clear();
     passwordController.clear();
+    _loadLanguage();
   }
 
   @override
   Widget build(BuildContext context) {
-    Size size = MediaQuery.of(context).size;
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xffEEF1F3),
         body: Column(
           children: [
-            const PageHeader(),
+            Stack(
+              children: [
+                const PageHeader(),
+                Positioned(
+                    right: 16,
+                    top: 16,
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(Icons.settings),
+                      onSelected: (value) async {
+                        if (value == 'language') {
+                          var result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const LanguageSwitchPage()),
+                          );
+                          if (result != null) {
+                            setState(() {
+                              title = result['title'];
+                              emailLabel = result['email'];
+                              emailtxt = result['emailtxt'];
+                              passwordLabel = result['password'];
+                              passwordtxt = result['passwordtxt'];
+                              forgetPasswordText = result['forgetPassword'];
+                              signUpText = result['signUp'];
+                              dontHaveAccountText = result['dontHaveAccount'];
+                              buttonlogin = result['buttonlogin'];
+                            });
+                          }
+                        }
+                      },
+                      itemBuilder: (BuildContext context) => [
+                        PopupMenuItem<String>(
+                          value: 'language',
+                          child: Row(
+                            children: const [
+                              Icon(Icons.language, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text('Ngôn ngữ'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )),
+              ],
+            ),
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(
@@ -58,12 +145,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     key: _loginFormKey,
                     child: Column(
                       children: [
-                        const PageHeading(
-                          title: 'Log-in',
-                        ),
+                        PageHeading(title: title),
                         CustomInputField(
-                          labelText: 'Email',
-                          hintText: 'Your email id',
+                          labelText: emailLabel,
+                          hintText: emailtxt,
                           controller: emailController,
                           validator: (textValue) {
                             if (_showErrors &&
@@ -76,15 +161,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             }
                             return null;
                           },
-                          keyboardType: TextInputType.text,
+                          keyboardType: TextInputType.emailAddress,
                           inputFormatters: [],
                         ),
-                        const SizedBox(
-                          height: 16,
-                        ),
+                        const SizedBox(height: 16),
                         CustomInputField(
-                          labelText: 'Password',
-                          hintText: 'Your password',
+                          labelText: passwordLabel,
+                          hintText: passwordtxt,
                           obscureText: true,
                           suffixIcon: true,
                           controller: passwordController,
@@ -98,77 +181,61 @@ class _LoginScreenState extends State<LoginScreen> {
                           keyboardType: TextInputType.text,
                           inputFormatters: [],
                         ),
-                        const SizedBox(
-                          height: 16,
-                        ),
-                        Container(
-                          width: size.width * 0.80,
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            onTap: () => {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const ForgetPasswordPage()))
-                            },
-                            child: const Text(
-                              'Forget password?',
-                              style: TextStyle(
-                                color: Color(0xff939393),
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () => {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const ForgetPasswordPage()))
+                          },
+                          child: Text(
+                            forgetPasswordText,
+                            style: const TextStyle(
+                              color: Color(0xff939393),
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        const SizedBox(
-                          height: 20,
-                        ),
+                        const SizedBox(height: 20),
                         CustomFormButtonLogin(
                           onPressed: () async {
-                            _handleLoginUser();
                             return null;
                           },
-                          innerText: 'Login',
+                          innerText: buttonlogin,
                         ),
-                        const SizedBox(
-                          height: 18,
-                        ),
-                        SizedBox(
-                          width: size.width * 0.8,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                'Don\'t have an account ? ',
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    color: Color(0xff939393),
+                        const SizedBox(height: 18),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              dontHaveAccountText,
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xff939393),
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            GestureDetector(
+                              onTap: () => {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const SignupPage()))
+                              },
+                              child: Text(
+                                signUpText,
+                                style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xff748288),
                                     fontWeight: FontWeight.bold),
                               ),
-                              GestureDetector(
-                                onTap: () => {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              const SignupPage()))
-                                },
-                                child: const Text(
-                                  'Sign-up',
-                                  style: TextStyle(
-                                      fontSize: 15,
-                                      color: Color(0xff748288),
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(
-                          height: 20,
-                        ),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),
@@ -191,7 +258,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       try {
         var response = await http.post(
-          Uri.parse('http://192.168.30.244:8000/api/auth/login'),
+          Uri.parse('http://192.168.1.171:8000/api/auth/login'),
           body: {'email': email, 'password': password},
         ).timeout(const Duration(seconds: 5));
 

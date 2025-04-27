@@ -19,6 +19,22 @@ class CookingNavigator extends StatefulWidget {
 
 class _CookingNavigatorState extends State<CookingNavigator> {
   @override
+  void initState() {
+    super.initState();
+    _loadRoleId();
+  }
+
+  void _loadRoleId() async {
+    int? savedRoleId = await getSavedRoleId();
+    if (savedRoleId != null) {
+      print('Lấy role_id từ SharedPreferences: $savedRoleId');
+      // Xử lý logic dựa trên role_id
+    } else {
+      print('Không tìm thấy role_id đã lưu');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BottomAppBar(
       shape: CircularNotchedRectangle(),
@@ -105,88 +121,104 @@ class _CookingNavigatorState extends State<CookingNavigator> {
     required String email,
     required String password,
   }) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: checkUserExists(email: email, password: password),
-      builder: (BuildContext context,
-          AsyncSnapshot<Map<String, dynamic>?> snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
+    return FutureBuilder<int?>(
+      future: getSavedRoleId(),
+      builder: (BuildContext context, AsyncSnapshot<int?> savedRoleSnapshot) {
+        if (savedRoleSnapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (savedRoleSnapshot.hasError) {
+          return Icon(Icons.error, color: Colors.red);
         } else {
-          if (snapshot.hasError) {
-            return Icon(Icons.error, color: Colors.red);
+          int? savedRoleId = savedRoleSnapshot.data;
+
+          if (savedRoleId != null) {
+            // Nếu đã lưu role_id, sử dụng role_id này
+            print('role_id từ SharedPreferences: $savedRoleId');
+            return _buildRoleBasedIcon(context, savedRoleId);
           } else {
-            Map<String, dynamic>? user = snapshot.data;
-            bool userExists = user != null;
-            if (userExists) {
-              var statusData = user['data'];
-              var status = statusData['role_id'];
-              if (status is int) {
-                print('Status find: $status');
-                return status == 1
-                    ? PopupMenuButton<int>(
-                        icon: Icon(Icons.add, color: Color(0xFF676E79)),
-                        onSelected: (value) {
-                          if (value == 1) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AddproductPage(),
-                              ),
-                            );
-                          } else if (value == 2) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ImportExcelGgSheetPage(),
-                              ),
-                            );
-                          } else if (value == 3) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => StatisticsPage(),
-                              ),
-                            );
-                          } else if (value == 4) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProductPage(),
-                              ),
-                            );
-                          }
-                        },
-                        itemBuilder: (BuildContext context) =>
-                            <PopupMenuEntry<int>>[
-                          PopupMenuItem<int>(
-                            value: 1,
-                            child: Text('Thêm sản phẩm'),
-                          ),
-                          PopupMenuItem<int>(
-                            value: 2,
-                            child: Text('Import file Excel'),
-                          ),
-                          PopupMenuItem<int>(
-                            value: 3,
-                            child: Text('Thống Kê Doang Thu'),
-                          ),
-                        ],
-                      )
-                    : GestureDetector(
-                        onTap: () {},
-                        child: Icon(Icons.shopping_basket,
-                            color: Color(0xFF676E79)),
-                      );
-              } else {
-                return SizedBox();
-              }
-            } else {
-              return SizedBox();
-            }
+            // Nếu chưa lưu role_id, gọi API checkUserExists
+            return FutureBuilder<Map<String, dynamic>?>(
+              future: checkUserExists(email: email, password: password),
+              builder: (BuildContext context,
+                  AsyncSnapshot<Map<String, dynamic>?> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Icon(Icons.error, color: Colors.red);
+                } else {
+                  Map<String, dynamic>? user = snapshot.data;
+                  if (user != null) {
+                    var statusData = user['data'];
+                    var status = statusData['role_id'];
+                    if (status is int) {
+                      print('role_id từ API: $status');
+                      return _buildRoleBasedIcon(context, status);
+                    }
+                  }
+                  // Nếu không tìm thấy user hoặc role_id
+                  print('Đây là tài khoản khách');
+                  return GestureDetector(
+                    onTap: () {},
+                    child:
+                        Icon(Icons.shopping_basket, color: Color(0xFF676E79)),
+                  );
+                }
+              },
+            );
           }
         }
       },
     );
+  }
+
+  Widget _buildRoleBasedIcon(BuildContext context, int roleId) {
+    if (roleId == 1) {
+      return PopupMenuButton<int>(
+        icon: Icon(Icons.add, color: Color(0xFF676E79)),
+        onSelected: (value) {
+          if (value == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => AddproductPage()),
+            );
+          } else if (value == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ImportExcelGgSheetPage()),
+            );
+          } else if (value == 3) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => StatisticsPage()),
+            );
+          } else if (value == 4) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProductPage()),
+            );
+          }
+        },
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+          PopupMenuItem<int>(
+            value: 1,
+            child: Text('Thêm sản phẩm'),
+          ),
+          PopupMenuItem<int>(
+            value: 2,
+            child: Text('Import file Excel'),
+          ),
+          PopupMenuItem<int>(
+            value: 3,
+            child: Text('Thống Kê Doang Thu'),
+          ),
+        ],
+      );
+    } else {
+      return GestureDetector(
+        onTap: () {},
+        child: Icon(Icons.shopping_basket, color: Color(0xFF676E79)),
+      );
+    }
   }
 
   Future<Map<String, dynamic>?> checkUserExists({
@@ -198,7 +230,7 @@ class _CookingNavigatorState extends State<CookingNavigator> {
 
     try {
       var response = await http.post(
-        Uri.parse('http://192.168.30.244:8000/api/auth/users'),
+        Uri.parse('http://192.168.1.171:8000/api/auth/users'),
         body: body,
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
@@ -207,9 +239,9 @@ class _CookingNavigatorState extends State<CookingNavigator> {
 
       if (response.statusCode == 200) {
         Map<String, dynamic> data = json.decode(response.body);
-        print('Data: $data');
 
         if (data['status'] == true) {
+          print('Data: $data');
           var userData = data['data'];
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setInt('userId', userData['id']);
@@ -222,6 +254,9 @@ class _CookingNavigatorState extends State<CookingNavigator> {
           await prefs.setInt('userStatus', userData['role_id']);
           await prefs.setString('userCreatedAt', userData['created_at']);
           await prefs.setString('userUpdatedAt', userData['updated_at']);
+          // Lưu role_id
+          await prefs.setInt('roleId',
+              userData['role_id']); // Lưu role_id vào SharedPreferences
 
           return data;
         } else {
@@ -234,5 +269,10 @@ class _CookingNavigatorState extends State<CookingNavigator> {
       print('Error checking user existence: $e');
     }
     return null;
+  }
+
+  Future<int?> getSavedRoleId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('roleId'); // Lấy giá trị role_id từ SharedPreferences
   }
 }

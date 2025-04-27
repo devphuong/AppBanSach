@@ -55,7 +55,7 @@ class _ItemsListState extends State<ItemsListCDCNPM> {
       }
 
       var response = await http.post(
-        Uri.parse('http://192.168.30.244:8000/api/auth/users'),
+        Uri.parse('http://192.168.68.107:8000/api/auth/users'),
         body: {'email': email, 'password': password},
       );
 
@@ -81,7 +81,7 @@ class _ItemsListState extends State<ItemsListCDCNPM> {
   }
 
   Future<void> fetchProducts() async {
-    const String baseUrl = 'http://192.168.30.244:8000/api/products/';
+    const String baseUrl = 'http://192.168.68.107:8000/api/products/';
     final client = HttpClient();
     client.connectionTimeout = Duration(minutes: 2);
 

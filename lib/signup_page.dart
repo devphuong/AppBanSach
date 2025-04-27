@@ -257,7 +257,7 @@ class _SignupPageState extends State<SignupPage> {
       try {
         var request = http.MultipartRequest(
           'POST',
-          Uri.parse('http://192.168.0.168:8000/api/auth/register'),
+          Uri.parse('http://192.168.1.171:8000/api/auth/register'),
         );
 
         request.fields['name'] = _nameController.text;

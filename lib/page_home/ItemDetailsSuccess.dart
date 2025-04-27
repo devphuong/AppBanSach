@@ -33,7 +33,7 @@ class ItemProductSuccessBook {
   });
 
   factory ItemProductSuccessBook.fromJson(Map<String, dynamic> json) {
-    String baseUrl = 'http://192.168.30.244:8000';
+    String baseUrl = 'http://192.168.1.171:8000';
     String imgProductUrl = json['product']['imgproduct'] != null
         ? baseUrl + json['product']['imgproduct']
         : '';

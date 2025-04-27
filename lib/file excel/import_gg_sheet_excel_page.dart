@@ -207,7 +207,7 @@ class _ImportExcelGgSheetPageState extends State<ImportExcelGgSheetPage> {
 
       try {
         var addCategoryResponse = await http.post(
-          Uri.parse('http://192.168.30.244:8000/api/addcategory'),
+          Uri.parse('http://192.168.1.171:8000/api/addcategory'),
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -227,7 +227,7 @@ class _ImportExcelGgSheetPageState extends State<ImportExcelGgSheetPage> {
 
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.30.244:8000/api/auth/addproduct'),
+        Uri.parse('http://192.168.1.171:8000/api/auth/addproduct'),
       );
 
       request.fields['category'] = category;
@@ -240,7 +240,7 @@ class _ImportExcelGgSheetPageState extends State<ImportExcelGgSheetPage> {
 
       if (imgProduct.isNotEmpty) {
         var imgProductUrl =
-            'http://192.168.30.244:8000/storage/imgproducts/$imgProduct';
+            'http://192.168.1.171:8000/storage/imgproducts/$imgProduct';
         try {
           var imgFile = await _downloadFileimg(imgProductUrl, 'imgproduct.jpg');
           if (imgFile != null) {
@@ -277,7 +277,7 @@ class _ImportExcelGgSheetPageState extends State<ImportExcelGgSheetPage> {
         var albumPaths = album.split(',');
         for (var path in albumPaths) {
           var albumUrl =
-              'http://192.168.30.244:8000/storage/albums/${path.trim()}';
+              'http://192.168.1.171:8000/storage/albums/${path.trim()}';
           try {
             var albumFile = await _downloadFileimg(albumUrl, 'album.jpg');
             if (albumFile != null) {
@@ -312,7 +312,7 @@ class _ImportExcelGgSheetPageState extends State<ImportExcelGgSheetPage> {
       }
 
       if (pdfFile.isNotEmpty) {
-        var pdfUrl = 'http://192.168.30.244:8000/storage/pdf/$pdfFile';
+        var pdfUrl = 'http://192.168.1.171:8000/storage/pdf/$pdfFile';
         try {
           var pdfDownloadedFile = await _downloadFile(pdfUrl, 'file.pdf');
           if (pdfDownloadedFile != null) {

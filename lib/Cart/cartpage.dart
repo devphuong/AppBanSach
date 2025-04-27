@@ -64,7 +64,7 @@ class _CartPageState extends State<CartPage> {
       bool hasMoreData = true;
 
       while (hasMoreData) {
-        var url = Uri.parse('http://192.168.30.244:8000/api/carts/$id');
+        var url = Uri.parse('http://192.168.1.171:8000/api/carts/$id');
         var response = await http.get(url);
 
         if (response.statusCode == 200) {
@@ -84,6 +84,13 @@ class _CartPageState extends State<CartPage> {
                 ? int.tryParse(itemData['quantity_bill'].toString()) ?? 0
                 : 0;
 
+            var success = itemData['success'] != null
+                ? int.tryParse(itemData['success'].toString()) ?? 0
+                : 0;
+
+            // Print success của từng id
+            print('Trang giỏ hàng ID: $id, Success: $success');
+
             var product = ItemCartProduct(
               id: itemData['id'],
               category: itemData['category'] ?? '',
@@ -98,6 +105,7 @@ class _CartPageState extends State<CartPage> {
               email: itemData['email'] ?? '',
               phone_number: itemData['phone_number'] ?? '',
               address: itemData['address'] ?? '',
+              success: success, // Gán giá trị success
             );
 
             if (!confirmedProducts.any((p) => p.id == product.id)) {
@@ -128,64 +136,194 @@ class _CartPageState extends State<CartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Giỏ Hàng'),
+        backgroundColor: Colors.white,
+        automaticallyImplyLeading:
+            false, // Hãy đảm bảo rằng không tự động tạo icon quay lại
+        title: Text(
+          'Giỏ Hàng',
+          style: TextStyle(color: Colors.black),
+        ),
       ),
+
+      backgroundColor: Colors.white,
       body: confirmedProducts.isEmpty
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: Colors.black))
           : RefreshIndicator(
               onRefresh: _fetchCartItems,
+              color: Colors.black,
               child: ListView.builder(
                 controller: _scrollController,
                 itemCount: confirmedProducts.length,
                 itemBuilder: (context, index) {
                   final product = confirmedProducts[index];
-                  return ListTile(
-                    title: Text(product.productName),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Mô tả: ${product.shortDescription}'),
-                        Text('Giá: ${product.price}'),
-                        Text('Giá khuyến mãi: ${product.promotionalPrice}'),
-                        Text('Số lượng: ${product.quantityBill}'),
-                        Text('Khách hàng: ${product.full_name}'),
-                        Text('Email: ${product.email}'),
-                        Text('Sdt: ${product.phone_number}'),
-                        Text('Địa chỉ: ${product.address}'),
-                        if (isAdmin)
+                  print(
+                      'isAdmin: $isAdmin, product.success: ${product.success}');
+                  return Card(
+                    color: Colors.white,
+                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Row(
                             children: [
-                              ElevatedButton(
-                                onPressed: () async {
-                                  await _handleProductReceived(product);
-                                },
-                                child: Text('Đã nhận'),
+                              Expanded(
+                                child: Text(
+                                  product.productName,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
                               ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  _updateProductStatus(product, false, true);
-                                },
-                                child: Text('Lỗi'),
-                              ),
+                              Icon(Icons.arrow_forward, color: Colors.grey),
                             ],
                           ),
-                      ],
+                          SizedBox(height: 5),
+                          if (product.price != 0.0)
+                            Text(
+                              'Giá: ${product.price}',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          if (product.promotionalPrice != null &&
+                              product.promotionalPrice != 0.0)
+                            Text(
+                              'Giá khuyến mãi: ${product.promotionalPrice}',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          Text('Số lượng: ${product.quantityBill}',
+                              style: TextStyle(color: Colors.black)),
+                          Divider(color: Colors.grey),
+                          Text('Khách hàng: ${product.full_name}',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black)),
+                          Text('Email: ${product.email}',
+                              style: TextStyle(color: Colors.black)),
+                          Text('Sdt: ${product.phone_number}',
+                              style: TextStyle(color: Colors.black)),
+                          Text('Địa chỉ: ${product.address}',
+                              style: TextStyle(color: Colors.black)),
+                          if (isAdmin == true && product.success == 1)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.green),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Đơn hàng đã xác nhận',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else if (isAdmin == false && product.success == 1)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.local_shipping,
+                                      color: Colors.blue),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Thanh toán thành công',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.local_shipping,
+                                      color: Colors.blue),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Đang xác nhận thanh toán',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (isAdmin)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      await _handleProductReceived(product);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                    ),
+                                    child: Text(
+                                      'Đã nhận',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      _updateProductStatus(
+                                          product, false, true);
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    child: Text(
+                                      'Lỗi',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                    trailing: Icon(Icons.arrow_forward),
-                    onTap: () {},
                   );
                 },
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
-          );
-        },
-        child: Icon(Icons.home),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     Navigator.push(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => HomeScreen()),
+      //     );
+      //   },
+      //   backgroundColor: Colors.orange,
+      //   child: Icon(Icons.home, color: Colors.white),
+      // ),
     );
   }
 
@@ -200,7 +338,7 @@ class _CartPageState extends State<CartPage> {
       int productId = productNameToIdMap[productName]!;
 
       var productUrl =
-          Uri.parse('http://192.168.30.244:8000/api/products/$productId');
+          Uri.parse('http://192.168.1.171:8000/api/products/$productId');
       var productResponse = await http.get(productUrl);
 
       if (productResponse.statusCode == 200) {
@@ -221,7 +359,7 @@ class _CartPageState extends State<CartPage> {
         };
 
         var url = Uri.parse(
-            'http://192.168.30.244:8000/api/update-product/$productId');
+            'http://192.168.1.171:8000/api/update-product/$productId');
         var response = await http.patch(
           url,
           headers: <String, String>{
@@ -286,7 +424,7 @@ class _CartPageState extends State<CartPage> {
   Future<void> _handleProductReceived(ItemCartProduct product) async {
     try {
       var allProductsUrl =
-          Uri.parse('http://192.168.30.244:8000/api/all-product');
+          Uri.parse('http://192.168.1.171:8000/api/all-product');
       var allProductsResponse = await http.get(allProductsUrl);
 
       if (allProductsResponse.statusCode == 200) {
@@ -303,7 +441,7 @@ class _CartPageState extends State<CartPage> {
             int productId = productNameToIdMap[product.productName]!;
 
             var productUrl =
-                Uri.parse('http://192.168.30.244:8000/api/products/$productId');
+                Uri.parse('http://192.168.1.171:8000/api/products/$productId');
             var productResponse = await http.get(productUrl);
 
             if (productResponse.statusCode == 200) {
@@ -363,7 +501,7 @@ class _CartPageState extends State<CartPage> {
 
     try {
       var url =
-          Uri.parse('http://192.168.30.244:8000/api/updatecart/${product.id}');
+          Uri.parse('http://192.168.1.171:8000/api/updatecart/${product.id}');
       var data = {
         'category': category,
         'product_name': productName,
@@ -392,6 +530,10 @@ class _CartPageState extends State<CartPage> {
 
       if (response.statusCode == 200) {
         print('Cart status updated successfully for product ${product.id}');
+        if (success == 1) {
+          product.success =
+              1; // Cập nhật giá trị success thành 1 khi thành công
+        }
       } else {
         print(
             'Failed to update cart status for product ${product.id}. Status code: ${response.statusCode}');
@@ -417,6 +559,7 @@ class ItemCartProduct {
   final String email;
   final String phone_number;
   final String address;
+  int success;
 
   ItemCartProduct({
     required this.id,
@@ -432,6 +575,7 @@ class ItemCartProduct {
     required this.email,
     required this.phone_number,
     required this.address,
+    this.success = 0,
   });
 
   @override

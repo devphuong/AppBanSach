@@ -13,10 +13,141 @@ class UserLoginScreen extends StatefulWidget {
 class _UserLoginScreenState extends State<UserLoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+
+  Future<Map<String, dynamic>?>? _checkUserExistsFuture;
+
   @override
   void initState() {
     super.initState();
     retrieveUserCredentialsFromSharedPreferences();
+  }
+
+  Future<void> retrieveUserCredentialsFromSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? email = prefs.getString('email');
+    String? password = prefs.getString('password');
+    print(
+        'Email from UserLoginScreen: $email, Password from UserLoginScreen: $password');
+
+    if (email != null && password != null) {
+      setState(() {
+        emailController.text = email;
+        passwordController.text = password;
+        _checkUserExistsFuture =
+            checkUserExists(email: email, password: password);
+      });
+    }
+  }
+
+  Future<Map<String, dynamic>?> checkUserExists({
+    required String email,
+    required String password,
+  }) async {
+    print('Email checkUserExists: $email, Password checkUserExists: $password');
+
+    var body = json.encode({'email': email, 'password': password});
+
+    try {
+      var response = await http.post(
+        Uri.parse('http://192.168.1.171:8000/api/auth/users'),
+        body: body,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = json.decode(response.body);
+
+        if (data['status'] == true) {
+          print('Data checkUserExists: $data');
+          var userData = data['data'];
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('userId', userData['id']);
+          await prefs.setString('userName', userData['name']);
+          await prefs.setString('userEmail', userData['email']);
+          await prefs.setString('userPhone', userData['phone']);
+          await prefs.setString('userAvatar', userData['avatar']);
+          await prefs.setString(
+              'userEmailVerifiedAt', userData['email_verified_at']);
+          await prefs.setInt('userStatus', userData['role_id']);
+          await prefs.setString('userCreatedAt', userData['created_at']);
+          await prefs.setString('userUpdatedAt', userData['updated_at']);
+
+          return data;
+        } else {
+          print('User does not exist or password is incorrect');
+        }
+      } else {
+        print('Error checkUserExists: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('Error checking user existence: $e');
+    }
+    return null;
+  }
+
+  Widget _buildAvatarAndUsername() {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _checkUserExistsFuture,
+      builder: (context, AsyncSnapshot<Map<String, dynamic>?> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        } else {
+          if (snapshot.hasError) {
+            return Text('Error Screen: ${snapshot.error}');
+          } else {
+            Map<String, dynamic>? user = snapshot.data;
+            bool userExists = user != null && user['status'] == true;
+            if (userExists) {
+              String email = user['data']['email'] ?? 'Tên người dùng';
+              String username = user['data']['name'] ?? 'Tên người dùng';
+              String? avatarUrl = user['data']['avatar'];
+              print('http://192.168.1.171:8000/storage/$avatarUrl');
+              if (avatarUrl != null && avatarUrl.isNotEmpty) {
+                return Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: CachedNetworkImageProvider(
+                        'http://192.168.1.171:8000/storage/$avatarUrl',
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      username,
+                      style: TextStyle(fontSize: 18, color: Colors.black),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      email,
+                      style: TextStyle(fontSize: 18, color: Colors.black),
+                    ),
+                  ],
+                );
+              } else {
+                return Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: AssetImage('assets/default_avatar_path'),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      username,
+                      style: TextStyle(fontSize: 18, color: Colors.black),
+                    ),
+                  ],
+                );
+              }
+            } else {
+              return Text('Người dùng không tồn tại hoặc sai mật khẩu');
+            }
+          }
+        }
+      },
+    );
   }
 
   @override
@@ -45,10 +176,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
             children: [
               _buildAppbarTitle(),
               SizedBox(height: 20),
-              _buildAvatarAndUsername(
-                email: emailController.text,
-                password: passwordController.text,
-              ),
+              _buildAvatarAndUsername(),
               SizedBox(height: 20),
               _buildLoginButton(),
               SizedBox(height: 10),
@@ -80,106 +208,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
         ),
       ],
     );
-  }
-
-  Widget _buildAvatarAndUsername({
-    required String email,
-    required String password,
-  }) {
-    return FutureBuilder<Map<String, dynamic>?>(
-      future: checkUserExists(email: email, password: password),
-      builder: (context, AsyncSnapshot<Map<String, dynamic>?> snapshot) {
-        print('Email from _buildAvatarAndUsername: $email');
-        print('Password from _buildAvatarAndUsername: $password');
-
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
-        } else {
-          if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
-          } else {
-            Map<String, dynamic>? user = snapshot.data;
-            bool userExists = user != null;
-            if (userExists) {
-              String Email = user['data']['email'] ?? 'Tên người dùng';
-              String username = user['data']['name'] ?? 'Tên người dùng';
-              String? avatarUrl = user['data']['avatar'];
-              print('http://192.168.30.244:8000/storage/$avatarUrl');
-              if (avatarUrl != null && avatarUrl.isNotEmpty) {
-                return Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: CachedNetworkImageProvider(
-                        'http://192.168.30.244:8000/storage/$avatarUrl',
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      username,
-                      style: TextStyle(fontSize: 18, color: Colors.black),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      Email,
-                      style: TextStyle(fontSize: 18, color: Colors.black),
-                    ),
-                  ],
-                );
-              } else {
-                return Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: AssetImage('assets/default_avatar_path'),
-                    ),
-                    SizedBox(height: 10),
-                    Text(
-                      username,
-                      style: TextStyle(fontSize: 18, color: Colors.black),
-                    ),
-                  ],
-                );
-              }
-            } else {
-              return Text('Người dùng không tồn tại');
-            }
-          }
-        }
-      },
-    );
-  }
-
-  Future<Map<String, dynamic>?> checkUserExists({
-    required String email,
-    required String password,
-  }) async {
-    print('Email from checkUserExists: $email');
-    print('Password from checkUserExists: $password');
-
-    var body = json.encode({'email': email, 'password': password});
-
-    try {
-      var response = await http.post(
-        Uri.parse('http://192.168.30.244:8000/api/auth/users'),
-        body: body,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-      ).timeout(const Duration(seconds: 5));
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> data = json.decode(response.body);
-        print('Data: $data');
-        return data;
-      } else {
-        print('Error: ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      print('Exception: $e');
-      return null;
-    }
   }
 
   Widget _buildLoginButton() {
@@ -271,25 +299,5 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     await prefs.setString('email', email);
     await prefs.setString('password', password);
     await prefs.setString('token', token);
-  }
-
-  Future<void> retrieveUserCredentialsFromSharedPreferences() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? email = prefs.getString('email');
-    String? password = prefs.getString('password');
-    print('Email from UserLoginScreen: $email');
-    print('Password from UserLoginScreen: $password');
-
-    if (email != null && password != null) {
-      emailController.text = email;
-      passwordController.text = password;
-
-      setState(() {
-        _buildAvatarAndUsername(
-          email: email,
-          password: password,
-        );
-      });
-    }
   }
 }

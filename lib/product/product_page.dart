@@ -79,7 +79,7 @@ class ProductPage extends StatefulWidget {
 
 class _ProductPageState extends State<ProductPage> {
   List<Product> _products = [];
-  final String apiUrl = 'http://192.168.30.244:8000/api/all-product';
+  final String apiUrl = 'http://192.168.1.171:8000/api/all-product';
 
   @override
   void initState() {
@@ -103,8 +103,7 @@ class _ProductPageState extends State<ProductPage> {
     try {
       var request = http.MultipartRequest(
         'PATCH',
-        Uri.parse(
-            'http://192.168.30.244:8000/api/update-product/${product.id}'),
+        Uri.parse('http://192.168.1.171:8000/api/update-product/${product.id}'),
       );
 
       // Ensure all required fields are set
@@ -182,7 +181,7 @@ class _ProductPageState extends State<ProductPage> {
 
   Future<void> _deleteProduct(int id) async {
     final response = await http
-        .delete(Uri.parse('http://192.168.30.244:8000/api/delete-product/$id'));
+        .delete(Uri.parse('http://192.168.1.171:8000/api/delete-product/$id'));
     if (response.statusCode == 200) {
       setState(() {
         _products.removeWhere((product) => product.id == id);

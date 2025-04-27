@@ -25,7 +25,7 @@ class _BooksOnlinePageState extends State<BooksOnlinePage> {
   Map<String, ItemProductSuccess> productsMap = {};
 
   Future<void> fetchProducts() async {
-    const String baseUrl = 'http://192.168.30.244:8000/api/products/';
+    const String baseUrl = 'http://192.168.1.171:8000/api/products/';
     final client = HttpClient();
     client.connectionTimeout = Duration(minutes: 2);
 
@@ -108,7 +108,7 @@ class _BooksOnlinePageState extends State<BooksOnlinePage> {
       List<ItemProductSuccess> cartItems = [];
 
       while (hasMoreData) {
-        var url = Uri.parse('http://192.168.30.244:8000/api/carts/$id');
+        var url = Uri.parse('http://192.168.1.171:8000/api/carts/$id');
         var response = await http.get(url);
 
         if (response.statusCode == 200) {

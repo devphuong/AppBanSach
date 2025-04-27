@@ -480,7 +480,7 @@ class _AddproductPageState extends State<AddproductPage> {
       try {
         var request = http.MultipartRequest(
           'POST',
-          Uri.parse('http://192.168.30.244:8000/api/auth/addproduct'),
+          Uri.parse('http://192.168.1.171:8000/api/auth/addproduct'),
         );
 
         String productName = _productnameController.text;
@@ -654,7 +654,7 @@ class _AddproductPageState extends State<AddproductPage> {
   Future<void> _fetchCategories() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.30.244:8000/api/all-category'),
+        Uri.parse('http://192.168.1.171:8000/api/all-category'),
         headers: {'Accept': 'application/json'},
       );
       if (response.statusCode == 200) {

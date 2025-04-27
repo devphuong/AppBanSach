@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:tot_nghiep_ban_sach_thu_vien/Bill/BillDetailPageNew.dart';
 import 'package:tot_nghiep_ban_sach_thu_vien/Bill/billdetailpage.dart';
 import 'package:tot_nghiep_ban_sach_thu_vien/Cart/cartpage.dart';
+import 'package:tot_nghiep_ban_sach_thu_vien/login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class BillPage extends StatefulWidget {
@@ -38,6 +40,74 @@ class _BillPageState extends State<BillPage> {
   String? userName;
   String? userEmail;
   String? userPhone;
+
+  String? selectedProvince;
+
+  List<String> vietnamProvinces = [
+    'An Giang',
+    'Bà Rịa - Vũng Tàu',
+    'Bắc Giang',
+    'Bắc Kạn',
+    'Bạc Liêu',
+    'Bắc Ninh',
+    'Bến Tre',
+    'Bình Định',
+    'Bình Dương',
+    'Bình Phước',
+    'Bình Thuận',
+    'Cà Mau',
+    'Cần Thơ',
+    'Cao Bằng',
+    'Đà Nẵng',
+    'Đắk Lắk',
+    'Đắk Nông',
+    'Điện Biên',
+    'Đồng Nai',
+    'Đồng Tháp',
+    'Gia Lai',
+    'Hà Giang',
+    'Hà Nam',
+    'Hà Nội',
+    'Hà Tĩnh',
+    'Hải Dương',
+    'Hải Phòng',
+    'Hậu Giang',
+    'Hòa Bình',
+    'Hưng Yên',
+    'Khánh Hòa',
+    'Kiên Giang',
+    'Kon Tum',
+    'Lai Châu',
+    'Lâm Đồng',
+    'Lạng Sơn',
+    'Lào Cai',
+    'Long An',
+    'Nam Định',
+    'Nghệ An',
+    'Ninh Bình',
+    'Ninh Thuận',
+    'Phú Thọ',
+    'Phú Yên',
+    'Quảng Bình',
+    'Quảng Nam',
+    'Quảng Ngãi',
+    'Quảng Ninh',
+    'Quảng Trị',
+    'Sóc Trăng',
+    'Sơn La',
+    'Tây Ninh',
+    'Thái Bình',
+    'Thái Nguyên',
+    'Thanh Hóa',
+    'Thừa Thiên Huế',
+    'Tiền Giang',
+    'TP Hồ Chí Minh',
+    'Trà Vinh',
+    'Tuyên Quang',
+    'Vĩnh Long',
+    'Vĩnh Phúc',
+    'Yên Bái'
+  ];
 
   @override
   void initState() {
@@ -144,97 +214,184 @@ class _BillPageState extends State<BillPage> {
                 style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 10.0),
-              Text(
-                'Tên: ${userName ?? 'Chưa có thông tin'}',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              SizedBox(height: 10.0),
-              Text(
-                'Email: ${userEmail ?? 'Chưa có thông tin'}',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              SizedBox(height: 10.0),
-              Text(
-                'Số điện thoại: ${userPhone ?? 'Chưa có thông tin'}',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              SizedBox(height: 10.0),
-              Text(
-                'Loại Sách: $category',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              SizedBox(height: 10.0),
-              Text(
-                'Tên Sách: $productName',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              SizedBox(height: 10.0),
-              Text(
-                'Mô tả ngắn: $shortDescription',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              SizedBox(height: 10.0),
-              if (promotionalPrice > 0)
-                Text(
-                  'Giá: ${currencyFormat.format(price)}',
-                  style: TextStyle(
-                      fontSize: 18.0, decoration: TextDecoration.lineThrough),
-                ),
-              Text(
-                promotionalPrice > 0
-                    ? 'Giá khuyến mãi: ${currencyFormat.format(promotionalPrice)}'
-                    : 'Giá: ${currencyFormat.format(price)}',
-                style: TextStyle(
-                    fontSize: 18.0,
-                    color: promotionalPrice > 0 ? Colors.red : Colors.red,
-                    fontWeight: promotionalPrice > 0
-                        ? FontWeight.bold
-                        : FontWeight.normal),
-              ),
-              SizedBox(height: 10.0),
-              if (pdfFile != null && pdfFile!.isNotEmpty)
-                Text(
-                  'PDF File: Sau thanh toán, hãy qua lại trang Mua Hàng và kiểm tra thông báo của chúng tôi!',
-                  style: TextStyle(fontSize: 18.0),
-                ),
-              SizedBox(height: 10.0),
-              Text(
-                'Số lượng sách: $quantityBill',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              SizedBox(height: 10.0),
-              Text(
-                'Tổng tiền: ${currencyFormat.format(totalAmount)}',
-                style: TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red),
-              ),
-              SizedBox(height: 10.0),
-              TextField(
-                controller: _addressController,
-                decoration: InputDecoration(labelText: 'Địa chỉ *'),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      _showPaymentDialog(context);
-                    },
-                    child: Text('Thanh toán'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => CartPage()),
-                      );
-                    },
-                    child: Text('Hủy'),
-                  ),
-                ],
-              ),
+              // Kiểm tra xem userName có giá trị không
+              userName == null || userName!.isEmpty
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Bạn hãy đăng nhập tài khoản để thanh toán.',
+                          style: TextStyle(
+                            fontSize: 18.0,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 20.0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                // Chuyển đến trang đăng nhập
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LoginScreen(),
+                                  ),
+                                );
+                              },
+                              child: Text('Đăng nhập'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Hủy và quay lại trang trước đó
+                                Navigator.pop(context);
+                              },
+                              child: Text('Hủy'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        Text(
+                          'Tên: ${userName ?? 'Chưa có thông tin'}',
+                          style: TextStyle(fontSize: 18.0),
+                        ),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Email: ${userEmail ?? 'Chưa có thông tin'}',
+                          style: TextStyle(fontSize: 18.0),
+                        ),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Số điện thoại: ${userPhone ?? 'Chưa có thông tin'}',
+                          style: TextStyle(fontSize: 18.0),
+                        ),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Loại Sách: $category',
+                          style: TextStyle(fontSize: 18.0),
+                        ),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Tên Sách: $productName',
+                          style: TextStyle(fontSize: 18.0),
+                        ),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Mô tả ngắn: $shortDescription',
+                          style: TextStyle(fontSize: 18.0),
+                        ),
+                        SizedBox(height: 10.0),
+                        if (promotionalPrice > 0)
+                          Text(
+                            'Giá: ${currencyFormat.format(price)}',
+                            style: TextStyle(
+                                fontSize: 18.0,
+                                decoration: TextDecoration.lineThrough),
+                          ),
+                        Text(
+                          promotionalPrice > 0
+                              ? 'Giá khuyến mãi: ${currencyFormat.format(promotionalPrice)}'
+                              : 'Giá: ${currencyFormat.format(price)}',
+                          style: TextStyle(
+                              fontSize: 18.0,
+                              color: promotionalPrice > 0
+                                  ? Colors.red
+                                  : Colors.red,
+                              fontWeight: promotionalPrice > 0
+                                  ? FontWeight.bold
+                                  : FontWeight.normal),
+                        ),
+                        SizedBox(height: 10.0),
+                        if (pdfFile != null && pdfFile!.isNotEmpty)
+                          Text(
+                            'PDF File: Sau thanh toán, hãy qua lại trang Mua Hàng và kiểm tra thông báo của chúng tôi!',
+                            style: TextStyle(fontSize: 18.0),
+                          ),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Số lượng sách: $quantityBill',
+                          style: TextStyle(fontSize: 18.0),
+                        ),
+                        SizedBox(height: 10.0),
+                        Text(
+                          'Tổng tiền: ${currencyFormat.format(totalAmount)}',
+                          style: TextStyle(
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red),
+                        ),
+                        SizedBox(height: 10.0),
+
+                        // Thay thế TextField bằng DropdownButton
+                        DropdownButtonFormField<String>(
+                          decoration: InputDecoration(labelText: 'Địa chỉ *'),
+                          value: selectedProvince,
+                          hint: Text('Chọn tỉnh/thành phố'),
+                          items: vietnamProvinces.map((String province) {
+                            return DropdownMenuItem<String>(
+                              value: province,
+                              child: Text(province),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedProvince = newValue;
+                            });
+                          },
+                        ),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                if (selectedProvince == null ||
+                                    selectedProvince!.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Vui lòng chọn địa chỉ trước khi thanh toán!'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => BillDetailPageNew(
+                                        userName: userName,
+                                        userEmail: userEmail,
+                                        userPhone: userPhone,
+                                        address: selectedProvince,
+                                        productName: productName,
+                                        quantityBill: quantityBill,
+                                        totalAmount: totalAmount,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text('Thanh toán'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => CartPage()),
+                                );
+                              },
+                              child: Text('Hủy'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
             ],
           ),
         ),
@@ -283,7 +440,7 @@ class _BillPageState extends State<BillPage> {
   }
 
   Future<void> _initiatePayment() async {
-    const url = 'http://192.168.30.244:8000/api/momopayment';
+    const url = 'http://192.168.1.171:8000/api/momopayment';
     await launch(url);
   }
 
@@ -337,7 +494,7 @@ class _BillPageState extends State<BillPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? savedMaxId = prefs.getInt('maxId');
 
-    var url = Uri.parse('http://192.168.30.244:8000/api/all-momopayment');
+    var url = Uri.parse('http://192.168.1.171:8000/api/all-momopayment');
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -359,7 +516,7 @@ class _BillPageState extends State<BillPage> {
 
           await prefs.setInt('maxId', maxId);
           var urlWithMaxId =
-              Uri.parse('http://192.168.30.244:8000/api/momopayment/$maxId');
+              Uri.parse('http://192.168.1.171:8000/api/momopayment/$maxId');
 
           var detailResponse = await http.get(urlWithMaxId);
           if (detailResponse.statusCode == 200) {
@@ -446,7 +603,7 @@ class _BillPageState extends State<BillPage> {
     print('finalPromotionalPrice ==> $finalPromotionalPrice');
     print('totalAmount ==> $totalAmount');
 
-    var url = Uri.parse('http://192.168.30.244:8000/api/addcart');
+    var url = Uri.parse('http://192.168.1.171:8000/api/addcart');
     var body = {
       'category': category ?? '',
       'product_name': productName ?? '',
@@ -530,7 +687,7 @@ class _BillPageState extends State<BillPage> {
     print('finalPromotionalPrice ==> $finalPromotionalPrice');
     print('totalAmount ==> $totalAmount');
 
-    var url = Uri.parse('http://192.168.30.244:8000/api/addbill');
+    var url = Uri.parse('http://192.168.1.171:8000/api/addbill');
     var body = {
       'category': category ?? '',
       'product_name': productName ?? '',

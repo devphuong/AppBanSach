@@ -97,7 +97,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
 
   Future<BillResponse> fetchBills() async {
     final response =
-        await http.get(Uri.parse('http://192.168.30.244:8000/api/all-bill'));
+        await http.get(Uri.parse('http://192.168.1.171:8000/api/all-bill'));
 
     if (response.statusCode == 200) {
       return BillResponse.fromJson(json.decode(response.body));

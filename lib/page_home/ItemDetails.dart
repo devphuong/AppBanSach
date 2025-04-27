@@ -1,9 +1,13 @@
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tot_nghiep_ban_sach_thu_vien/Bill/billpage.dart';
+import 'package:tot_nghiep_ban_sach_thu_vien/Cart/cartpage.dart';
+import 'package:tot_nghiep_ban_sach_thu_vien/Cart/cartpagenew.dart';
+import 'package:tot_nghiep_ban_sach_thu_vien/TextToSpeech/texttospeechexample.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ItemProduct {
@@ -34,7 +38,7 @@ class ItemProduct {
   });
 
   factory ItemProduct.fromJson(Map<String, dynamic> json) {
-    String baseUrl = 'http://192.168.30.244:8000';
+    String baseUrl = 'http://192.168.1.171:8000';
     String imgProductUrl = json['product']['imgproduct'] != null
         ? baseUrl + json['product']['imgproduct']
         : '';
@@ -90,6 +94,9 @@ class ItemDetail extends StatefulWidget {
 }
 
 class _ItemDetailState extends State<ItemDetail> {
+  final TextToSpeechService _ttsService = TextToSpeechService();
+  bool isReading = false; // Quản lý trạng thái đang đọc
+  FlutterTts flutterTts = FlutterTts();
   int selectedQuantity = 1;
   int quantity_bill = 1;
 
@@ -99,10 +106,35 @@ class _ItemDetailState extends State<ItemDetail> {
     _saveSelectedQuantity(quantity_bill);
     _saveProductDetails();
     printSavedData();
+
+    // Lắng nghe sự kiện đọc hoàn tất
+    flutterTts.setCompletionHandler(() {
+      setState(() {
+        isReading = false; // Đọc xong, đặt trạng thái về false
+      });
+    });
+
+    // Lắng nghe lỗi từ TTS
+    flutterTts.setErrorHandler((msg) {
+      setState(() {
+        isReading = false; // Lỗi, đặt trạng thái về false
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    // Dừng đọc khi thoát khỏi trang
+    flutterTts.stop();
+    setState(() {
+      isReading = false; // Đặt trạng thái về false
+    });
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    print("isReading: $isReading"); // Kiểm tra trạng thái khi giao diện được vẽ
     return FutureBuilder<int>(
       future: _getUserStatus(),
       builder: (context, snapshot) {
@@ -287,11 +319,73 @@ class _ItemDetailState extends State<ItemDetail> {
                     ),
                     SizedBox(height: 20.0),
                     if (widget.product.detailedDescription.isNotEmpty)
-                      _buildDescriptionSection('Mô tả chi tiết:',
-                          widget.product.detailedDescription),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Mô tả chi tiết:',
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              SizedBox(width: 10.0),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  _readDescriptionWithAI(
+                                      widget.product.detailedDescription);
+                                },
+                                icon: Icon(Icons.speaker, color: Colors.white),
+                                label: Text(
+                                  isReading ? 'Đang đọc...' : 'Hỗ trợ đọc',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      isReading ? Colors.grey : Colors.blue,
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 10.0, horizontal: 20.0),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                  ),
+                                ),
+                              ),
+                              if (isReading) // Icon luôn hiển thị khi đang đọc
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Icon(
+                                    Icons.volume_up,
+                                    color: Colors.blue,
+                                    size: 24.0,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 10.0),
+                          Text(
+                            widget.product.detailedDescription,
+                            style: TextStyle(
+                              fontSize: 14.0,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    SizedBox(height: 20.0),
                     if (widget.product.shortDescription.isNotEmpty)
                       _buildDescriptionSection(
-                          'Mô tả ngắn:', widget.product.shortDescription),
+                        'Mô tả ngắn:',
+                        widget.product.shortDescription,
+                      ),
                     SizedBox(height: 20.0),
                   ],
                 ),
@@ -309,8 +403,22 @@ class _ItemDetailState extends State<ItemDetail> {
                       padding: EdgeInsets.all(15.0),
                       shape: CircleBorder(),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CartPage()),
+                      );
+                    },
                     child: Icon(Icons.shopping_cart, color: Colors.white),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: EdgeInsets.all(15.0),
+                      shape: CircleBorder(),
+                    ),
+                    onPressed: () {},
+                    child: Icon(Icons.favorite, color: Colors.white),
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -347,6 +455,29 @@ class _ItemDetailState extends State<ItemDetail> {
     );
   }
 
+  Future<void> _readDescriptionWithAI(String description) async {
+    if (isReading) {
+      // Nếu đang đọc, dừng đọc
+      await flutterTts.stop();
+      setState(() {
+        isReading = false; // Đặt trạng thái về false
+      });
+    } else {
+      // Nếu không đọc, bắt đầu đọc
+      setState(() {
+        isReading = true; // Đặt trạng thái là đang đọc
+      });
+      try {
+        await flutterTts.speak(description);
+      } catch (e) {
+        print("Error: $e");
+        setState(() {
+          isReading = false; // Cập nhật trạng thái nếu có lỗi
+        });
+      }
+    }
+  }
+
   Widget _buildDescriptionSection(String title, String description) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,7 +485,7 @@ class _ItemDetailState extends State<ItemDetail> {
         Text(
           title,
           style: TextStyle(
-            fontSize: 20.0,
+            fontSize: 16.0,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
@@ -363,8 +494,8 @@ class _ItemDetailState extends State<ItemDetail> {
         Text(
           description,
           style: TextStyle(
-            fontSize: 16.0,
-            color: Colors.black54,
+            fontSize: 14.0,
+            color: Colors.black,
           ),
         ),
         SizedBox(height: 20.0),
